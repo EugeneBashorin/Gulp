@@ -1,0 +1,241 @@
+shift + right mouse button => open terminal(command string)
+1 => npm i gulp -g 
+("npm" - пакет установщик "i" - инсталл "gulp" - название пакета "-g"- глобально(если не глобально установка в папку проекта)) 
+2=> npm init - инициализация пакетов.
+Появл. файл package.json
+{
+  "name": "myproject",
+ 
+ "version": "1.0.0",
+ 
+ "description": "My First Gulp Project",
+ 
+ "main": "index.js",
+ 
+ "scripts": {
+ 
+   "test": "echo \"Error: no test specified\" && exit 1"
+ 
+ },
+ 
+ "author": "Eugene",
+  "license": "ISC",}
+1 => npm i gulp --save-dev 
+(npm i gulp "--save-dev" -позволяет добавлять пакет и версию  в package.json
+{
+  "name": "myproject",
+ 
+ "version": "1.0.0",
+ 
+ "description": "My First Gulp Project",
+ 
+ "main": "index.js",
+ 
+ "scripts": {
+ 
+   "test": "echo \"Error: no test specified\" && exit 1"
+ 
+ },
+ 
+ "author": "Eugene",
+ 
+ "license": "ISC",
+ "devDependencies": {
+    *************************************
+  "gulp": "^3.9.1"
+		***********************************
+ }
+}
+добавилась папка node_modules(модули пакеты)
+
+Структура проекта:
+"Gulp_start" - КОРНЕВАЯ ПАПКА ПРОЕКТА.
+Создаем папку "app" и папку "dist":
+В "app" создаем папки: css/fonts/img/js/sass, а также файл index.html
+В "dist" будет лежать готовый продукт/ оптимизированный и т.д.
+
+в корневой папке + файл: gulpfile.js
+В нем:
+var gulp = require('gulp'); => подключение модуля gulp
+//создаем задачу
+gulp.task('mytask', function(){ => имя задачи и то, что она делает
+		console.log('Привет, я таск!');
+	});
+//вызов команды из консоли:
+gulp mytask	=> имя задачи
+
+gulp.task('mytask2', function(){ => имя задачи и то, что она делает
+		return gulp.src('source-files')	// 1.БЕРЕМ ФАЙЛ
+		.pipe(plugin())			//подключение плагинов 2.ЧТО-ТО ДЕЛАЕМ С НИМ
+		.pipe(gulp.dest('folder'))		// dest - destination выгрузка в ... 3.ВЫВОДИМ РЕЗУЛЬТАТ/ЗАПИСЫВАЕМ В НУЖНОЕ МЕСТО
+	});
+
+//ПОДКЛЮЧЕНИЕ SASS
+=> npm i gulp-sass --save-dev
+в package.json добавился gulp-sass пакет
+"devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-sass": "^3.1.0" *****************
+  }
+//создаем в папке sass файл main.sass
+**
+body
+	background-color:#000
+**
+
+в файле gulpfile.js
+var sass = require('gulp-sass'); // подключение пакета
+
+gulp.task('addsass', function(){
+	return gulp.src('app/sass/main.sass')//исходный файл
+	.pipe(sass()) 											// подключение sass пакета
+	.pipe(gulp.dest('app/css'))//gulp.dest только вместе/ нельзя сделать выгрузку в файл
+});
+
+=> gulp addsass
+cоздается файл main.css в папке css
+
+//ВЫБОРКА ФАЙЛА
+шаблон глобал:
+=>	return gulp.src('app/sass/*.sass') //выбирает все файлы с расширением .sass
+=>	app/sass/**/*.sass //выбирает все файлы с расширением .sass из дирректории sass и всех поддиректорий sass
+=>	'!app/sass/main.sass' // исключение файла из выборки
+=>	['!app/sass/main.sass','app/sass/**/*.sass'] // се файлы с расширением .sass кроме main.sass
+шаблон
+=>	'app/sass/*.+(sccs|sass)' выбирает все .sccs .sass из sass folder
+=>	'app/sass/**/*.+(sccs|sass)' выбирает все .sccs .sass из sass директории и всех ее поддиректориях
+
+!!!Файлы с ниж подч  _part.sass, не участвуют в компиляции как отдельные файлы, только подключаются в другие файлы через импорт
+=>main.sass
+@import(_part.sass)
+body
+	background...
+
+//НАБЛЮДЕНИЕ ЗА ИЗМЕНЕНИЯМИ
+gulp.task('watcher',function(){
+		gulp.watch('app/sass/**/*.sass',['addsass'])//watch - стандартная ф-ия отслеживания/ 1Й эл.что отслеживать / 2Й эл. какие ф-ции(в нашем случае 'addsass')
+});
+
+	=> ctrl+C  => выход из watch
+
+установим не глобально браузер sinc для пользования ЛИФРИЛОАД(подключение сервера/отслеживание изменений в реальном времени в браузере): 
+	=> npm i browser-sync --save-dev
+
+//Подключение sass и др плагинов для reject JS
+gulp.task('sass',function(){
+	return gulp.src('app/sass/**/*.sass')//выборка всех sass files
+	.pipe(sass())//подключение sass
+	.pipe(gulp.dest('app/css'))//выгрузка в папку уже скомп. файлов
+	.pipe(browserSync.reload({stream:true}))//reload-подключение инжекта, stream:true - для инжекта непосредственно
+
+});
+//Подключение браузера sync, подключение сервера:
+gulp.task('browser-sync', function(){
+	browserSync({
+		server: {
+			baseDir:'app'//папка которая будет выступать в качестве сервера
+		},
+		notify: false //отключение уведомлений от браузера
+		})
+});
+//Перепишем watcher для sync:
+//!!! ВАЖНО в task =>['',''] указываются компоненты, которые выполняются перед основной задачей 'watch'
+//т.е. в нашем случае сначала подлючается browser-sync затем sass, и только потом watch.
+//для запуска достаточно запустить gulp watch
+gulp.task('watch',['browser-sync','sass'], function(){
+	gulp.watch('app/sass/**/*.sass',['sass']);
+});
+//командная строка выдает
+//Access URLs:
+//Local: http://localhost:3000
+//External: http://176.241.137.23:3000 для использ моб.устройств в сети wi-fi
+//UI: http://localhost:3001 //settings sync(nothing important)
+//UI External: http://176.241.137.23:3001
+
+//Add file common.js
+
+install bower
+=> npm i -g bower
+add .bowerrc file
+{
+"directory":"app/libs/"	//директория установки
+}
+
+=> bower i jquery magnific-popup
+
+=> npm i gulp-concat gulp-uglifyjs --save-dev
+gulp-concat - для конкатинации файлов
+gulp-uglify - для сжатия файлов(js)
+
+//подключение concat и uglifyjs// обьединение и минимизация js файлов подкл. библиотек
+gulp.task('scripts',function(){
+	gulp.src([
+		'app/libs/jquery/dist/jquery.min.js',
+		'app/libs/magnific-popup/dist/jquery.magnific-popup.min.js'
+		])
+	.pipe(concat('libs.min.js'))//libs.min.js => new file, в который происходит сборка всех js files
+	.pipe(uglify())//сжатие
+	.pipe(gulp.dest('app/js'))//конечная дирректория выгрузки
+})
+В index.html подключаем библиотеки:
+<script src="js/libs.min.js"></script>
+<script src="js/common.js"></script>
+
+//Подключение css:
+	=>npm i gulp-cssnano --dev-save
+	=>npm i gulp-cssrename --dev-save //=> для указания что min файл а не полный
+
+//Таск для сжатия всех библиотек
+gulp.task('css-libs',['sass'],function(){
+	return gulp.src('app/css/libs.css')//выбираем файл для сжатия
+	.pipe(cssnano())										//сжимаем
+	.pipe(rename({suffix:'.min'}))		//добавляем суффикс min
+	.pipe(gulp.dest('app/css'))					//выгрузка
+})
+
+//СБОРКА ПРОЕКТА
+gulp.task('build',['clean','img','sass','scripts'],function(){
+	var buildCss = gulp.src(['app/css/main.css','app/css/libs.min.css'])
+	.pipe(gulp.dest('dist/css'));//перенос main.css libs.css из app в dist
+	
+	var buildFonts = gulp.src('app/fonts/**/*')
+	.pipe(gulp.dest('dist/fonts')); // переносим все шрифты в папку fonts
+
+	var buildJs = gulp.src('app/js/**/*')
+	.pipe(gulp.dest('dist/js'));	// переносим все js files в папку js
+
+	var buildHtml = gulp.src('app/*.html')
+	.pipe(gulp.dest('dist'));			// переносим все html files в папку dist
+});
+
+//Предварительная очистка папки dist от старыхфайлов. Используем пакет del
+//	=>npm i del --save-dev
+gulp.task('clean',function(){
+	return del.sync('dist/'); //синхронзируется и удаляется папка dist
+});
+
+//чистка кэша
+gulp.task('clear',function(){
+	return cache.clearAll();
+});
+
+
+//Оптимизация работы с приложениями. Используем пакет gulp-imagemin imagemin-pngquant
+//	=>npm i gulp-imagemin imagemin-pngquant --save-dev
+gulp.task('img',function(){
+	return gulp.src('app/img/**/*')
+	.pipe(cache(imagemin({
+		interlaced: true,
+		progressive: true,
+		svgoPlugins: [{ removeViewBox: false}],
+		use:[pngquant()]
+	})))
+	.pipe(gulp.dest('dist/img'))
+})
+
+//Добавим кэш для картинок.
+//	=> npm i gulp-cache --save-dev
+//добавил cache в img
+
+//Добавим автоматич добавление автопрефиксов
+//	=> npm i gulp-autoprefixer --save-dev
